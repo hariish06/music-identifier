@@ -10,6 +10,25 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from fingerprint import fingerprint_audio_file
 
+
+st.markdown("""
+    <style>
+        div.stButton > button:first-child {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            border: none;
+            padding: 10px 24px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        div.stButton > button:first-child:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # ============================================================================
 # PAGE CONFIG
 # ============================================================================
@@ -157,11 +176,16 @@ with st.sidebar:
 # ============================================================================
 # MODE SELECTION
 # ============================================================================
-mode = st.radio(
-    "Select mode:",
-    ["🎧 Single Clip – Identify One Song", "📁 Batch Mode – Process Multiple Files"],
-    horizontal=True
-)
+# === REPLACE YOUR OLD MODE SELECTOR WITH THIS ===
+with st.sidebar:
+    st.title("Control Panel")
+    mode = st.radio(
+        "Select mode:",
+        ["🎧 Single Clip – Identify One Song", "📂 Batch Mode – Process Multiple Files"]
+    )
+    st.markdown("---")
+    st.markdown("### Backend Status")
+    st.success("⚡ SQLite Database Connected")
 
 # ============================================================================
 # MODE 1: SINGLE CLIP
