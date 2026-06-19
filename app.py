@@ -255,100 +255,97 @@ if st.session_state.mode == "Single":
             ["📊 Result", "🎼 Spectrogram", "⭐ Constellation Peaks", "📈 Offset Histogram"]
         )
 
-        # ==============================================================================
-        # TAB 1: MODERN RESULT VIEW
-        # ==============================================================================
         with tab1:
             st.write("")  # Quick spacer
 
-            # 1. Main Match Banner Card
-            st.markdown(
-                f"""
-                <div style="
-                    background: linear-gradient(135deg, #1E2235 0%, #111424 100%);
-                    padding: 24px;
-                    border-radius: 12px;
-                    border: 1px solid #2D3142;
-                    border-left: 5px solid #00D1B2;
-                    margin-bottom: 20px;
-                ">
-                    <span style="color: #00D1B2; font-weight: 700; font-size: 12px; uppercase; tracking-step: 1px;">🎉 TOP MATCH IDENTIFIED</span>
-                    <h2 style="margin: 4px 0 0 0; color: #FFFFFF; font-size: 32px;">Back In The U.S.S.R.</h2>
-                    <p style="margin: 6px 0 0 0; color: #A3A8B4; font-size: 14px;">🎯 Audio matching logic completed successfully with high precision.</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            # Ensure an audio file has actually been uploaded before trying to process it
+            if uploaded_file:
 
-            # 2. Key Metrics Row (Using Columns)
-            metric_col1, metric_col2 = st.columns(2)
+                # 1. RUN AUDIO MATCHING QUERY ONLY ONCE PER NEW UPLOADED FILE
+                if "last_processed_file" not in st.session_state or st.session_state.last_processed_file != uploaded_file.name:
+                    with st.spinner("🔍 Analyzing audio (querying SQLite database)..."):
+                        try:
+                            best_song, best_score, best_offsets_list, match_counts, metadata = identify_query_clip_sqlite(
+                                temp_path,
+                                db_conn
+                            )
 
-            with metric_col1:
-                st.markdown(
-                    """
-                    <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
-                        <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">🎯 Match Confidence Score</p>
-                        <h2 style="margin:0; padding-top:6px; font-size:36px; color:#FF4B4B;">18,235</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                            # Store the fresh data fields safely in session state
+                            st.session_state.metadata = metadata
+                            st.session_state.best_song = best_song
+                            st.session_state.best_score = best_score
+                            st.session_state.match_counts = match_counts
+                            st.session_state.last_processed_file = uploaded_file.name
 
-            with metric_col2:
-                st.markdown(
-                    """
-                    <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
-                        <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">📊 Statistical Certainty</p>
-                        <h2 style="margin:0; padding-top:6px; font-size:36px; color:#00D1B2;">100%</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                        except Exception as e:
+                            st.error(f"Error during audio identification: {e}")
+                            st.stop()
 
-            st.write("")
-            st.markdown("### 📋 Top 5 Match Candidates")
+                # 2. DYNAMICALLY RENDER THE RESULTS UI FROM CACHED STATE VARIABLES
+                if "best_song" in st.session_state and st.session_state.best_song != "Unknown / No Match":
 
-            # 3. Modern Candidate Standings Table
-            # (Dynamically inject your ranking array items inside this HTML structure)
-            candidates_html = """
-            <table style="width:100%; border-collapse: collapse; margin-top:10px; font-size:15px; color:#E2E8F0;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #2D3142; text-align: left; color:#A3A8B4;">
-                        <th style="padding: 10px; font-weight:600; width: 10%;">Rank</th>
-                        <th style="padding: 10px; font-weight:600; width: 65%;">Song Title</th>
-                        <th style="padding: 10px; font-weight:600; width: 25%; text-align: right;">Total Matches</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #1E2235; background-color: rgba(0, 209, 178, 0.05);">
-                        <td style="padding: 12px; font-weight: 700; color:#00D1B2;">#1</td>
-                        <td style="padding: 12px; font-weight: 600; color:#FFFFFF;">🥇 Back In The U.S.S.R.</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 700; color:#00D1B2;">19,989</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#2</td>
-                        <td style="padding: 12px; color:#E2E8F0;">Never Gonna Give You Up</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,728</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#3</td>
-                        <td style="padding: 12px; color:#E2E8F0;">Hey Jude</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,572</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#4</td>
-                        <td style="padding: 12px; color:#E2E8F0;">While My Guitar Gently Weeps</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,107</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #2D3142;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#5</td>
-                        <td style="padding: 12px; color:#E2E8F0;">A Day In The Life</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,052</td>
-                    </tr>
-                </tbody>
-            </table>
-            """
-            st.markdown(candidates_html, unsafe_allow_html=True)
+                    # Safely calculate analytical certainty percentage
+                    total_top_matches = sum([count for _, count in
+                                             st.session_state.match_counts[:5]]) if st.session_state.match_counts else 1
+                    certainty = int(
+                        (st.session_state.best_score / total_top_matches) * 100) if total_top_matches > 0 else 100
+
+                    # Main Dynamic Match Banner Card
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background: linear-gradient(135deg, #1E2235 0%, #111424 100%);
+                            padding: 24px;
+                            border-radius: 12px;
+                            border: 1px solid #2D3142;
+                            border-left: 5px solid #00D1B2;
+                            margin-bottom: 20px;
+                        ">
+                            <span style="color: #00D1B2; font-weight: 700; font-size: 11px; letter-spacing: 1px;">🎉 TOP MATCH IDENTIFIED</span>
+                            <h2 style="margin: 4px 0 0 0; color: #FFFFFF; font-size: 30px;">{st.session_state.best_song}</h2>
+                            <p style="margin: 6px 0 0 0; color: #A3A8B4; font-size: 14px;">🎯 Audio fingerprint matching completed successfully with high precision.</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    # Key Metrics Row (Using Columns)
+                    metric_col1, metric_col2 = st.columns(2)
+
+                    with metric_col1:
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
+                                <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">🎯 Match Confidence Score</p>
+                                <h2 style="margin:0; padding-top:6px; font-size:32px; color:#FF4B4B;">{st.session_state.best_score:,}</h2>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                    with metric_col2:
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
+                                <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">📊 Statistical Certainty</p>
+                                <h2 style="margin:0; padding-top:6px; font-size:32px; color:#00D1B2;">{certainty}%</h2>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                    st.write("")
+                    st.markdown("### 📋 Top 5 Match Candidates")
+
+                    # Loop through match_counts to dynamically construct the HTML table rows
+                    table_rows = ""
+                    for i, (song_name, count) in enumerate(st.session_state.match_counts[:5]):
+                        rank = i + 1
+
+                        # Apply special visual highlight rules for the absolute winner (#1)
+                        if rank == 1:
+                            row_style = 'style="border-bottom: 1px solid #1E2235; background-color: rgba(0, 209, 178, 0.05);"'
+                            title_display = f"🥇 <b>{song_name}</b>"
         # ==============================================================================
         # TAB 2: SPECTROGRAM
         # ==============================================================================
