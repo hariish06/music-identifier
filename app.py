@@ -464,85 +464,155 @@ if st.session_state.mode == "Single":
             pass
 
 # ============================================================================
-# MODE 2: BATCH MODE
+# MODE 2: BATCH MODE (UPGRADED WITH DYNAMIC VISUALIZATIONS)
 # ============================================================================
 else:  # Batch mode
-    st.subheader("📁 Batch Processing")
-    
+    st.subheader("📁 Batch Processing & Analytics")
+
     uploaded_files = st.file_uploader(
         "Choose multiple audio files",
         type=["wav", "mp3", "ogg", "flac", "m4a"],
         accept_multiple_files=True
     )
-    
+
     if uploaded_files:
         st.info(f"📁 {len(uploaded_files)} files selected")
-        
-        if st.button("▶️ Process All Files", type="primary", use_container_width=True):
+
+        if st.button("▶️ Process All Files & Generate Graphics", type="primary", use_container_width=True):
             results = []
             progress_bar = st.progress(0)
             status_placeholder = st.empty()
-            
+
             for idx, uploaded_file in enumerate(uploaded_files):
                 status_placeholder.text(
-                    f"⏳ Processing {idx + 1}/{len(uploaded_files)}: {uploaded_file.name}"
+                    f"⏳ Analyzing file {idx + 1}/{len(uploaded_files)}: {uploaded_file.name}"
                 )
                 progress_bar.progress((idx + 1) / len(uploaded_files))
 
                 temp_dir = "./tmp"
-                os.makedirs(temp_dir, exist_ok=True)  # Automatically creates the folder if it's missing
+                os.makedirs(temp_dir, exist_ok=True)
                 temp_path = os.path.join(temp_dir, uploaded_file.name)
                 with open(temp_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
-                
+
                 try:
-                    best_song, _, _, _, _ = identify_query_clip_sqlite(temp_path, db_conn)
+                    # Run full analytical query to capture plotting matrices
+                    best_song, highest_peak_count, best_offsets_list, match_counts, metadata = identify_query_clip_sqlite(
+                        temp_path,
+                        db_conn
+                    )
+
                     filename_without_ext = os.path.splitext(uploaded_file.name)[0]
                     prediction = best_song if best_song != "Unknown / No Match" else "UNKNOWN"
-                    
+
+                    # Track data properties in the loop state dictionary
                     results.append({
                         "filename": filename_without_ext,
-                        "prediction": prediction
+                        "prediction": prediction,
+                        "score": highest_peak_count,
+                        "offsets": best_offsets_list,
+                        "metadata": metadata,
+                        "status": "SUCCESS"
                     })
-                
+
                 except Exception as e:
                     filename_without_ext = os.path.splitext(uploaded_file.name)[0]
                     results.append({
                         "filename": filename_without_ext,
-                        "prediction": "ERROR"
+                        "prediction": "ERROR",
+                        "score": 0,
+                        "offsets": [],
+                        "metadata": None,
+                        "status": f"FAILED: {e}"
                     })
-                
+
                 try:
                     os.remove(temp_path)
                 except:
                     pass
-            
+
             status_placeholder.empty()
             progress_bar.empty()
-            
+
             st.success("✅ Batch processing complete!")
-            
-            df_results = pd.DataFrame(results)
-            st.dataframe(df_results, use_container_width=True)
-            
-            csv_content = df_results.to_csv(index=False)
-            
-            st.download_button(
-                label="📥 Download results.csv",
-                data=csv_content,
-                file_name="results.csv",
-                mime="text/csv"
-            )
-            
+
+            # 1. Summary Cards Matrix
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Total", len(results))
+                st.metric("Total Files", len(results))
             with col2:
-                unknowns = sum(1 for r in results if r['prediction'] in ['UNKNOWN', 'ERROR'])
-                st.metric("Identified", len(results) - unknowns)
+                identified = sum(1 for r in results if r['prediction'] not in ['UNKNOWN', 'ERROR'])
+                st.metric("Identified", identified)
             with col3:
                 errors = sum(1 for r in results if r['prediction'] == 'ERROR')
-                st.metric("Errors", errors)
+                st.metric("Errors/Unidentified", errors)
+
+            st.markdown("---")
+            st.write("### 🔍 Individual Song Inspection Panels")
+
+            # 2. Dynamic Expander Blocks with Plots for Each Song
+            for track in results:
+                icon = "🟢" if track["status"] == "SUCCESS" else "🔴"
+                panel_label = f"{icon} File: {track['filename']} ➡️ Match: {track['prediction']}"
+
+                with st.expander(panel_label):
+                    if track["status"] != "SUCCESS":
+                        st.error(track["status"])
+                        continue
+
+                    st.write(f"**Match Confidence Peak:** {track['score']:,}")
+
+                    # Create columns inside expander for side-by-side or stacked plots
+                    v_tab1, v_tab2, v_tab3 = st.tabs(["🎼 Spectrogram", "⭐ Constellation Peaks", "📈 Offset Histogram"])
+
+                    # Tab A: Spectrogram
+                    with v_tab1:
+                        if track["metadata"] and 'spectrogram' in track["metadata"]:
+                            meta = track["metadata"]
+                            fig, ax = plt.subplots(figsize=(10, 3.5))
+                            ax.imshow(
+                                meta['spectrogram'],
+                                aspect='auto',
+                                origin='lower',
+                                cmap='magma',
+                                extent=[meta['times'][0], meta['times'][-1], meta['frequencies'][0],
+                                        meta['frequencies'][-1]]
+                            )
+                            ax.set_xlabel("Time (seconds)")
+                            ax.set_ylabel("Frequency (Hz)")
+                            st.pyplot(fig)
+                            plt.close(fig)  # Memory cleanup
+                        else:
+                            st.warning("Spectrogram arrays not available.")
+
+                    # Tab B: Constellation Map
+                    with v_tab2:
+                        if track["metadata"] and 'peak_times' in track["metadata"]:
+                            meta = track["metadata"]
+                            if len(meta['peak_times']) > 0:
+                                fig, ax = plt.subplots(figsize=(10, 3.5))
+                                ax.scatter(meta['peak_times'], meta['peak_freqs'], alpha=0.6, s=20, color='orange',
+                                           edgecolors='darkorange')
+                                ax.set_xlabel("Time (seconds)")
+                                ax.set_ylabel("Frequency (Hz)")
+                                ax.grid(True, alpha=0.2)
+                                st.pyplot(fig)
+                                plt.close(fig)
+                            else:
+                                st.info("No constellation peaks detected.")
+
+                    # Tab C: Offset Histogram
+                    with v_tab3:
+                        if track["offsets"] and len(track["offsets"]) > 0:
+                            fig, ax = plt.subplots(figsize=(10, 3.5))
+                            ax.hist(track["offsets"], bins=50, color='steelblue', edgecolor='navy', alpha=0.7)
+                            ax.set_xlabel("Time Offset (seconds)")
+                            ax.set_ylabel("Matching Hashes")
+                            ax.grid(True, alpha=0.2)
+                            st.pyplot(fig)
+                            plt.close(fig)
+                        else:
+                            st.info("No delta time distribution offsets captured.")
 
 # ==============================================================================
 # MODERN SIDEBAR: DATABASE STATUS
