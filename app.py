@@ -10,8 +10,24 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from fingerprint import fingerprint_audio_file
 
+# ============================================================================
+# CUSTOM STYLING
+# ============================================================================
 st.markdown("""
     <style>
+        /* Dark theme colors */
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #00D1B2;
+            --bg-dark: #0F1419;
+            --bg-card: #1E2235;
+            --border: #2D3142;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A3A8B4;
+        }
+
+        /* Button styling */
         div.stButton > button:first-child {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -24,6 +40,20 @@ st.markdown("""
         div.stButton > button:first-child:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+        }
+
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 10px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        /* Graph background */
+        .stPlotlyChart, .stPyplotChart {
+            background: transparent;
         }
     </style>
 """, unsafe_allow_html=True)
