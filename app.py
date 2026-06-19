@@ -160,7 +160,18 @@ if db_conn is None:
     """)
     st.stop()
 
+# Show database stats in sidebar
+with st.sidebar:
+    st.markdown("### 📊 Database Stats")
+    num_songs, unique_hashes, total_entries = get_db_stats()
+    if num_songs:
+        st.metric("Songs", num_songs)
+        st.metric("Unique Hashes", f"{unique_hashes:,}")
+        st.metric("Total Entries", f"{total_entries:,}")
 
+        # Database info
+        db_size = os.path.getsize("music_database.db") / (1024*1024)
+        st.metric("DB Size", f"{db_size:.2f} MB")
 
 # ==============================================================================
 # MODERN MODE SELECTION (MAIN PAGE)
@@ -255,184 +266,101 @@ if st.session_state.mode == "Single":
             ["📊 Result", "🎼 Spectrogram", "⭐ Constellation Peaks", "📈 Offset Histogram"]
         )
 
-        # ==============================================================================
-        # TAB 1: MODERN RESULT VIEW
-        # ==============================================================================
+        # ===== TAB 1: IDENTIFICATION RESULT =====
         with tab1:
-            st.write("")  # Quick spacer
+            st.subheader("🎯 Identification Result")
 
-            # 1. Main Match Banner Card
-            st.markdown(
-                f"""
-                <div style="
-                    background: linear-gradient(135deg, #1E2235 0%, #111424 100%);
-                    padding: 24px;
-                    border-radius: 12px;
-                    border: 1px solid #2D3142;
-                    border-left: 5px solid #00D1B2;
-                    margin-bottom: 20px;
-                ">
-                    <span style="color: #00D1B2; font-weight: 700; font-size: 12px; uppercase; tracking-step: 1px;">🎉 TOP MATCH IDENTIFIED</span>
-                    <h2 style="margin: 4px 0 0 0; color: #FFFFFF; font-size: 32px;">Back In The U.S.S.R.</h2>
-                    <p style="margin: 6px 0 0 0; color: #A3A8B4; font-size: 14px;">🎯 Audio matching logic completed successfully with high precision.</p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # 2. Key Metrics Row (Using Columns)
-            metric_col1, metric_col2 = st.columns(2)
-
-            with metric_col1:
-                st.markdown(
-                    """
-                    <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
-                        <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">🎯 Match Confidence Score</p>
-                        <h2 style="margin:0; padding-top:6px; font-size:36px; color:#FF4B4B;">18,235</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            with metric_col2:
-                st.markdown(
-                    """
-                    <div style="background-color: #1E2235; padding: 16px; border-radius: 10px; border: 1px solid #2D3142; text-align: center;">
-                        <p style="margin:0; font-size:13px; color:#A3A8B4; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">📊 Statistical Certainty</p>
-                        <h2 style="margin:0; padding-top:6px; font-size:36px; color:#00D1B2;">100%</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            st.write("")
-            st.markdown("### 📋 Top 5 Match Candidates")
-
-            # 3. Modern Candidate Standings Table
-            # (Dynamically inject your ranking array items inside this HTML structure)
-            candidates_html = """
-            <table style="width:100%; border-collapse: collapse; margin-top:10px; font-size:15px; color:#E2E8F0;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #2D3142; text-align: left; color:#A3A8B4;">
-                        <th style="padding: 10px; font-weight:600; width: 10%;">Rank</th>
-                        <th style="padding: 10px; font-weight:600; width: 65%;">Song Title</th>
-                        <th style="padding: 10px; font-weight:600; width: 25%; text-align: right;">Total Matches</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #1E2235; background-color: rgba(0, 209, 178, 0.05);">
-                        <td style="padding: 12px; font-weight: 700; color:#00D1B2;">#1</td>
-                        <td style="padding: 12px; font-weight: 600; color:#FFFFFF;">🥇 Back In The U.S.S.R.</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 700; color:#00D1B2;">19,989</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#2</td>
-                        <td style="padding: 12px; color:#E2E8F0;">Never Gonna Give You Up</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,728</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#3</td>
-                        <td style="padding: 12px; color:#E2E8F0;">Hey Jude</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,572</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #1E2235;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#4</td>
-                        <td style="padding: 12px; color:#E2E8F0;">While My Guitar Gently Weeps</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,107</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #2D3142;">
-                        <td style="padding: 12px; font-weight: 600; color:#A3A8B4;">#5</td>
-                        <td style="padding: 12px; color:#E2E8F0;">A Day In The Life</td>
-                        <td style="padding: 12px; text-align: right; color:#E2E8F0;">1,052</td>
-                    </tr>
-                </tbody>
-            </table>
-            """
-            st.markdown(candidates_html, unsafe_allow_html=True)
-        # ==============================================================================
-        # TAB 2: SPECTROGRAM
-        # ==============================================================================
-        with tab2:
-            st.subheader("🎼 Spectrogram Visualization")
-
-            # Check if metadata exists in session_state before trying to plot
-            if "metadata" in st.session_state and st.session_state.metadata is not None:
+            with st.spinner("🔍 Analyzing audio (querying SQLite database)..."):
                 try:
-                    # Pull directly from session state
-                    current_metadata = st.session_state.metadata
-
-                    spec_db = current_metadata['spectrogram']
-                    times = current_metadata['times']
-                    freqs = current_metadata['frequencies']
-
-                    # Generate the matplotlib figure
-                    fig, ax = plt.subplots(figsize=(12, 5))
-                    im = ax.imshow(
-                        spec_db,
-                        aspect='auto',
-                        origin='lower',
-                        cmap='magma',
-                        extent=[times[0], times[-1], freqs[0], freqs[-1]]
+                    # SQLite-based identification
+                    best_song, best_score, best_offsets_list, match_counts, metadata = identify_query_clip_sqlite(
+                        temp_path,
+                        db_conn
                     )
 
-                    ax.set_xlabel("Time (seconds)")
-                    ax.set_ylabel("Frequency (Hz)")
-                    ax.set_title("Spectrogram (dB scale)")
-                    plt.colorbar(im, ax=ax, label="Magnitude (dB)")
+                    if best_song != "Unknown / No Match":
+                        # Display result
+                        col1, col2, col3 = st.columns(3)
 
-                    # Render the plot in Streamlit
-                    st.pyplot(fig)
+                        with col1:
+                            st.metric("🎵 Matched Song", best_song)
+
+                        with col2:
+                            st.metric("🎯 Confidence", best_score)
+
+                        with col3:
+                            if best_score > 0:
+                                confidence_pct = min(100, (best_score / 20) * 100)
+                                st.metric("📊 Certainty", f"{confidence_pct:.0f}%")
+
+                        st.success(f"✅ Song identified as **{best_song}**")
+
+                        # Top candidates
+                        st.markdown("### Top 5 Candidates")
+                        top_candidates = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+                        for rank, (song_name, score) in enumerate(top_candidates, 1):
+                            col_rank, col_name, col_score = st.columns([0.5, 2, 1])
+                            with col_rank:
+                                st.write(f"**#{rank}**")
+                            with col_name:
+                                st.write(song_name)
+                            with col_score:
+                                st.write(f"{score} matches")
+
+                    else:
+                        st.warning("⚠️ No match found in database.")
 
                 except Exception as e:
-                    st.error(f"Error rendering plot: {e}")
+                    st.error(f"❌ Error: {str(e)}")
+                    import traceback
+                    st.write(traceback.format_exc())
 
-            else:
-                # User hasn't processed a file yet in this session run
-                st.info(
-                    "👋 Please upload and identify an audio file in the 'Result' tab first to generate its spectrogram.")
+        # ===== TAB 2: SPECTROGRAM =====
+        with tab2:
+            st.subheader("🎼 Spectrogram Visualization")
+            try:
+                spec_db = metadata['spectrogram']
+                times = metadata['times']
+                freqs = metadata['frequencies']
 
-        # ==============================================================================
-        # TAB 3: CONSTELLATION
-        # ==============================================================================
+                fig, ax = plt.subplots(figsize=(12, 5))
+                im = ax.imshow(
+                    spec_db,
+                    aspect='auto',
+                    origin='lower',
+                    cmap='magma',
+                    extent=[times[0], times[-1], freqs[0], freqs[-1]]
+                )
+                ax.set_xlabel("Time (seconds)")
+                ax.set_ylabel("Frequency (Hz)")
+                ax.set_title("Spectrogram (dB scale)")
+                plt.colorbar(im, ax=ax, label="Magnitude (dB)")
+                st.pyplot(fig)
+
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+        # ===== TAB 3: CONSTELLATION =====
         with tab3:
             st.subheader("⭐ Peak Constellation")
+            try:
+                peak_times = metadata['peak_times']
+                peak_freqs = metadata['peak_freqs']
 
-            # Check if metadata exists in session_state before parsing peaks
-            if "metadata" in st.session_state and st.session_state.metadata is not None:
-                try:
-                    # Pull safely from session state
-                    current_metadata = st.session_state.metadata
+                if len(peak_times) > 0:
+                    fig, ax = plt.subplots(figsize=(12, 5))
+                    ax.scatter(peak_times, peak_freqs, alpha=0.6, s=40, color='orange', edgecolors='darkorange')
+                    ax.set_xlabel("Time (seconds)")
+                    ax.set_ylabel("Frequency (Hz)")
+                    ax.set_title(f"Peak Constellation – {len(peak_times)} peaks")
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                else:
+                    st.info("No peaks detected")
 
-                    peak_times = current_metadata['peak_times']
-                    peak_freqs = current_metadata['peak_freqs']
-
-                    if len(peak_times) > 0:
-                        fig, ax = plt.subplots(figsize=(12, 5))
-                        ax.scatter(
-                            peak_times,
-                            peak_freqs,
-                            alpha=0.6,
-                            s=40,
-                            color='orange',
-                            edgecolors='darkorange'
-                        )
-                        ax.set_xlabel("Time (seconds)")
-                        ax.set_ylabel("Frequency (Hz)")
-                        ax.set_title(f"Peak Constellation - {len(peak_times)} peaks")
-                        ax.grid(visible=True, alpha=0.3)
-
-                        # Render the plot in Streamlit
-                        st.pyplot(fig)
-                    else:
-                        st.info("No peaks detected")
-
-                except Exception as e:
-                    st.error(f"Error rendering constellation map: {e}")
-
-            else:
-                # User hasn't processed a file yet in this session run
-                st.info(
-                    "👋 Please upload and identify an audio file in the 'Result' tab first to view its constellation peaks.")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
         # ===== TAB 4: OFFSET HISTOGRAM =====
         with tab4:
@@ -544,85 +472,4 @@ else:  # Batch mode
                 errors = sum(1 for r in results if r['prediction'] == 'ERROR')
                 st.metric("Errors", errors)
 
-# ==============================================================================
-# MODERN SIDEBAR: DATABASE STATUS
-# ==============================================================================
-with st.sidebar:
-    # 1. This should be your ONLY sidebar header now
-    st.markdown("### 📊 Database Status")
 
-    # Get stats from your existing backend helper
-    num_songs, unique_hashes, total_entries = get_db_stats()
-    db_size = os.path.getsize("music_database.db") / (1024 * 1024)
-
-    # ❌ REMOVE / COMMENT OUT ANY OLD CODES LIKE THESE:
-    # st.markdown("### 📊 Database Stats")  <-- Delete this old one if duplicated
-    # st.metric(label="Songs", ...)         <-- Delete these old vertical metrics
-    # st.metric(label="Unique Hashes", ...)
-    # st.metric(label="Total Entries", ...)
-    # st.metric(label="DB Size", ...)
-
-    # 2. Keep ONLY the grid layout structure below:
-    row1_col1, row1_col2 = st.columns(2)
-    row2_col1, row2_col2 = st.columns(2)
-
-    with row1_col1:
-        st.markdown(
-            f"""
-            <div style="background-color: #1E2235; padding: 10px; border-radius: 8px; border: 1px solid #2D3142; margin-bottom: 10px;">
-                <p style="margin:0; font-size:12px; color:#A3A8B4; text-transform:uppercase; font-weight:600;">Songs</p>
-                <h3 style="margin:0; padding-top:4px; font-size:22px; color:#FFFFFF;">{num_songs:,}</h3>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with row1_col2:
-        st.markdown(
-            f"""
-            <div style="background-color: #1E2235; padding: 10px; border-radius: 8px; border: 1px solid #2D3142; margin-bottom: 10px;">
-                <p style="margin:0; font-size:12px; color:#A3A8B4; text-transform:uppercase; font-weight:600;">DB Size</p>
-                <h3 style="margin:0; padding-top:4px; font-size:22px; color:#00D1B2;">{db_size:.1f} MB</h3>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with row2_col1:
-        st.markdown(
-            f"""
-            <div style="background-color: #1E2235; padding: 10px; border-radius: 8px; border: 1px solid #2D3142;">
-                <p style="margin:0; font-size:11px; color:#A3A8B4; text-transform:uppercase; font-weight:600;">Hashes</p>
-                <h3 style="margin:0; padding-top:4px; font-size:18px; color:#FFFFFF;">{unique_hashes:,}</h3>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with row2_col2:
-        st.markdown(
-            f"""
-            <div style="background-color: #1E2235; padding: 10px; border-radius: 8px; border: 1px solid #2D3142;">
-                <p style="margin:0; font-size:11px; color:#A3A8B4; text-transform:uppercase; font-weight:600;">Entries</p>
-                <h3 style="margin:0; padding-top:4px; font-size:18px; color:#FFFFFF;">{total_entries:,}</h3>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    st.markdown("---")
-
-    # Elegant Backend Status Info Group
-    st.markdown("### ⚡ Backend Info")
-
-    st.markdown(
-        """
-        <div style="background-color: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px; border-left: 3px solid #FF4B4B;">
-            <p style="margin:0; font-size:13px; color:#E2E8F0; line-height: 1.5;">
-                ⚡ <b>Fast indexed queries</b><br>
-                💾 <b>No RAM overhead</b>
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
