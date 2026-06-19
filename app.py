@@ -375,7 +375,7 @@ if st.session_state.mode == "Single":
                         extent=[times[0], times[-1], freqs[0], freqs[-1]]
                     )
 
-                    ax.set_xlabeled("Time (seconds)")
+                    ax.set_xlabel("Time (seconds)")
                     ax.set_ylabel("Frequency (Hz)")
                     ax.set_title("Spectrogram (dB scale)")
                     plt.colorbar(im, ax=ax, label="Magnitude (dB)")
