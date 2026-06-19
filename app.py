@@ -193,46 +193,37 @@ if db_conn is None:
     """)
     st.stop()
 
-# ==============================================================================
-# MODERN MODE SELECTION (MAIN PAGE)
-# ==============================================================================
-
-st.write("### 🛠️ Select Operation Mode")
-
-# Initialize session state for mode if it doesn't exist
+# ============================================================================
+# MODE SELECTION
+# ============================================================================
 if "mode" not in st.session_state:
     st.session_state.mode = "Single"
 
-# Create two clean columns for the mode selection cards
 col1, col2 = st.columns(2)
 
 with col1:
-    # Card styling for Single Clip mode
     is_single = st.session_state.mode == "Single"
 
-    # Visual indicator using a nice markdown block
     st.markdown(
         f"""
         <div style="
             padding: 20px; 
             border-radius: 10px; 
-            border: 2px solid {'#FF4B4B' if is_single else '#4F5366'}; 
+            border: 2px solid {'#00D1B2' if is_single else '#4F5366'}; 
             background-color: {'#1E2235' if is_single else 'transparent'};
             text-align: center;
         ">
             <h3>🎧 Single Clip</h3>
-            <p style="color: #A3A8B4; font-size: 14px;">Identify a single song using fast fingerprint matching.</p>
+            <p style="color: #A3A8B4; font-size: 14px;">Identify a single song from an audio clip.</p>
         </div>
         """,
         unsafe_allow_html=True
     )
-    st.write("")  # Spacer
     if st.button("Activate Single Mode", use_container_width=True, type="primary" if is_single else "secondary"):
         st.session_state.mode = "Single"
         st.rerun()
 
 with col2:
-    # Card styling for Batch Mode
     is_batch = st.session_state.mode == "Batch"
 
     st.markdown(
@@ -245,12 +236,11 @@ with col2:
             text-align: center;
         ">
             <h3>📂 Batch Mode</h3>
-            <p style="color: #A3A8B4; font-size: 14px;">Process and catalog multiple audio files at once.</p>
+            <p style="color: #A3A8B4; font-size: 14px;">Process multiple audio files at once.</p>
         </div>
         """,
         unsafe_allow_html=True
     )
-    st.write("")  # Spacer
     if st.button("Activate Batch Mode", use_container_width=True, type="primary" if is_batch else "secondary"):
         st.session_state.mode = "Batch"
         st.rerun()
