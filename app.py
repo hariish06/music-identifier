@@ -370,91 +370,104 @@ if st.session_state.mode == "Single":
             </table>
             """
             st.markdown(candidates_html, unsafe_allow_html=True)
-        # ==============================================================================
-        # TAB 2: SPECTROGRAM
-        # ==============================================================================
-        with tab2:
-            st.subheader("🎼 Spectrogram Visualization")
+            # ==============================================================================
+            # TAB 2: SPECTROGRAM (IMPROVED LAYOUT)
+            # ==============================================================================
+            with tab2:
+                st.subheader("🎼 Spectrogram Visualization")
+                st.markdown("Time-frequency representation of the audio signal")
 
-            # Check if metadata exists in session_state before trying to plot
-            if "metadata" in st.session_state and st.session_state.metadata is not None:
-                try:
-                    # Pull directly from session state
-                    current_metadata = st.session_state.metadata
+                if "metadata" in st.session_state and st.session_state.metadata is not None:
+                    try:
+                        current_metadata = st.session_state.metadata
+                        spec_db = current_metadata['spectrogram']
+                        times = current_metadata['times']
+                        freqs = current_metadata['frequencies']
 
-                    spec_db = current_metadata['spectrogram']
-                    times = current_metadata['times']
-                    freqs = current_metadata['frequencies']
+                        # Create larger, better-styled figure
+                        fig, ax = plt.subplots(figsize=(14, 7))
+                        fig.patch.set_facecolor('#0F1419')
+                        ax.set_facecolor('#1E2235')
 
-                    # Generate the matplotlib figure
-                    fig, ax = plt.subplots(figsize=(12, 5))
-                    im = ax.imshow(
-                        spec_db,
-                        aspect='auto',
-                        origin='lower',
-                        cmap='magma',
-                        extent=[times[0], times[-1], freqs[0], freqs[-1]]
-                    )
-
-                    ax.set_xlabel("Time (seconds)")
-                    ax.set_ylabel("Frequency (Hz)")
-                    ax.set_title("Spectrogram (dB scale)")
-                    plt.colorbar(im, ax=ax, label="Magnitude (dB)")
-
-                    # Render the plot in Streamlit
-                    st.pyplot(fig)
-
-                except Exception as e:
-                    st.error(f"Error rendering plot: {e}")
-
-            else:
-                # User hasn't processed a file yet in this session run
-                st.info(
-                    "👋 Please upload and identify an audio file in the 'Result' tab first to generate its spectrogram.")
-
-        # ==============================================================================
-        # TAB 3: CONSTELLATION
-        # ==============================================================================
-        with tab3:
-            st.subheader("⭐ Peak Constellation")
-
-            # Check if metadata exists in session_state before parsing peaks
-            if "metadata" in st.session_state and st.session_state.metadata is not None:
-                try:
-                    # Pull safely from session state
-                    current_metadata = st.session_state.metadata
-
-                    peak_times = current_metadata['peak_times']
-                    peak_freqs = current_metadata['peak_freqs']
-
-                    if len(peak_times) > 0:
-                        fig, ax = plt.subplots(figsize=(12, 5))
-                        ax.scatter(
-                            peak_times,
-                            peak_freqs,
-                            alpha=0.6,
-                            s=40,
-                            color='orange',
-                            edgecolors='darkorange'
+                        im = ax.imshow(
+                            spec_db,
+                            aspect='auto',
+                            origin='lower',
+                            cmap='magma',
+                            extent=[times[0], times[-1], freqs[0], freqs[-1]]
                         )
-                        ax.set_xlabel("Time (seconds)")
-                        ax.set_ylabel("Frequency (Hz)")
-                        ax.set_title(f"Peak Constellation - {len(peak_times)} peaks")
-                        ax.grid(visible=True, alpha=0.3)
 
-                        # Render the plot in Streamlit
-                        st.pyplot(fig)
-                    else:
-                        st.info("No peaks detected")
+                        ax.set_xlabel("Time (seconds)", fontsize=12, color='#A3A8B4')
+                        ax.set_ylabel("Frequency (Hz)", fontsize=12, color='#A3A8B4')
+                        ax.set_title("Spectrogram (dB scale)", fontsize=14, color='#FFFFFF', pad=20)
 
-                except Exception as e:
-                    st.error(f"Error rendering constellation map: {e}")
+                        # Style colorbar
+                        cbar = plt.colorbar(im, ax=ax, label="Magnitude (dB)")
+                        cbar.ax.tick_params(colors='#A3A8B4')
+                        cbar.ax.yaxis.label.set_color('#A3A8B4')
 
-            else:
-                # User hasn't processed a file yet in this session run
-                st.info(
-                    "👋 Please upload and identify an audio file in the 'Result' tab first to view its constellation peaks.")
+                        # Style ticks
+                        ax.tick_params(colors='#A3A8B4', labelsize=10)
+                        ax.spines['bottom'].set_color('#2D3142')
+                        ax.spines['left'].set_color('#2D3142')
+                        ax.spines['top'].set_visible(False)
+                        ax.spines['right'].set_visible(False)
 
+                        st.pyplot(fig, use_container_width=True)
+
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+                else:
+                    st.info("Run identification first")
+
+            # ==============================================================================
+            # TAB 3: CONSTELLATION (IMPROVED LAYOUT)
+            # ==============================================================================
+            with tab3:
+                st.subheader("⭐ Peak Constellation")
+                st.markdown("Spectral peaks extracted from the audio signal")
+
+                if "metadata" in st.session_state and st.session_state.metadata is not None:
+                    try:
+                        current_metadata = st.session_state.metadata
+                        peak_times = current_metadata['peak_times']
+                        peak_freqs = current_metadata['peak_freqs']
+
+                        if len(peak_times) > 0:
+                            fig, ax = plt.subplots(figsize=(14, 7))
+                            fig.patch.set_facecolor('#0F1419')
+                            ax.set_facecolor('#1E2235')
+
+                            ax.scatter(
+                                peak_times,
+                                peak_freqs,
+                                alpha=0.7,
+                                s=60,
+                                color='#FF9500',
+                                edgecolors='#FFB84D',
+                                linewidth=1
+                            )
+
+                            ax.set_xlabel("Time (seconds)", fontsize=12, color='#A3A8B4')
+                            ax.set_ylabel("Frequency (Hz)", fontsize=12, color='#A3A8B4')
+                            ax.set_title(f"Peak Constellation – {len(peak_times)} peaks detected", fontsize=14,
+                                         color='#FFFFFF', pad=20)
+                            ax.grid(visible=True, alpha=0.2, color='#2D3142')
+
+                            ax.tick_params(colors='#A3A8B4', labelsize=10)
+                            ax.spines['bottom'].set_color('#2D3142')
+                            ax.spines['left'].set_color('#2D3142')
+                            ax.spines['top'].set_visible(False)
+                            ax.spines['right'].set_visible(False)
+
+                            st.pyplot(fig, use_container_width=True)
+                        else:
+                            st.info("No peaks detected")
+
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+                else:
+                    st.info("Run identification first")
         # ===== TAB 4: OFFSET HISTOGRAM =====
         with tab4:
             st.subheader("📈 Offset Histogram")
