@@ -160,18 +160,7 @@ if db_conn is None:
     """)
     st.stop()
 
-# Show database stats in sidebar
-with st.sidebar:
-    st.markdown("### 📊 Database Stats")
-    num_songs, unique_hashes, total_entries = get_db_stats()
-    if num_songs:
-        st.metric("Songs", num_songs)
-        st.metric("Unique Hashes", f"{unique_hashes:,}")
-        st.metric("Total Entries", f"{total_entries:,}")
-        
-        # Database info
-        db_size = os.path.getsize("music_database.db") / (1024*1024)
-        st.metric("DB Size", f"{db_size:.2f} MB")
+
 
 # ==============================================================================
 # MODERN MODE SELECTION (MAIN PAGE)
