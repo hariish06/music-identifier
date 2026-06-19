@@ -289,9 +289,20 @@ if st.session_state.mode == "Single":
                     cached_score = st.session_state.get("best_score", 0)
 
                     # Safely calculate analytical certainty percentage
-                    total_top_matches = sum([count for _, count in cached_matches[:5]]) if cached_matches else 1
-                    certainty = int((cached_score / total_top_matches) * 100) if total_top_matches > 0 else 100
+                    # 🔴 SAFE UPDATE: Bulletproof validation for total_top_matches calculation
+                    total_top_matches = 1
+                    if cached_matches and isinstance(cached_matches, list):
+                        try:
+                            total_top_matches = sum([count for _, count in cached_matches[:5]])
+                        except (ValueError, TypeError, KeyError):
+                            # Fallback if the elements inside cached_matches aren't standard pairs
+                            total_top_matches = 1
 
+                    # Prevent division by zero if total_top_matches happens to be 0
+                    if total_top_matches == 0:
+                        total_top_matches = 1
+
+                    certainty = int((cached_score / total_top_matches) * 100)
                     # Main Dynamic Match Banner Card
                     st.markdown(
                         f"""
